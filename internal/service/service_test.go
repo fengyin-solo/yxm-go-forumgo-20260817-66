@@ -156,6 +156,39 @@ func TestVoteService(t *testing.T) {
 	}
 }
 
+func TestVoteRejectsDeletedCommentTarget(t *testing.T) {
+	boardStore, _ := store.NewMemoryBoardStore("", nil, 30*time.Second)
+	threadStore, _ := store.NewMemoryThreadStore("", nil, 30*time.Second)
+	commentStore, _ := store.NewMemoryCommentStore("", nil, 30*time.Second)
+	voteStore, _ := store.NewMemoryVoteStore("", nil, 30*time.Second)
+	t.Cleanup(func() {
+		boardStore.Close()
+		threadStore.Close()
+		commentStore.Close()
+		voteStore.Close()
+	})
+	boardSvc := NewBoardService(boardStore)
+	threadSvc := NewThreadService(threadStore, boardStore)
+	commentSvc := NewCommentService(commentStore, threadStore)
+	voteSvc := NewVoteService(voteStore, threadStore, commentStore)
+
+	boardSvc.Create(context.Background(), &model.Board{ID: "b1", Name: "Board", Slug: "board"})
+	th, _ := threadSvc.Create(context.Background(), &model.Thread{BoardID: "b1", AuthorID: "u1", Title: "Hidden target", Body: "body"})
+	c, _ := commentSvc.Create(context.Background(), &model.Comment{ThreadID: th.ID, AuthorID: "u2", Body: "remove me"})
+	if err := commentSvc.Delete(context.Background(), c.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	err := voteSvc.Vote(context.Background(), &model.Vote{TargetType: "comment", TargetID: c.ID, UserID: "u3", Value: 1})
+	if err == nil {
+		t.Fatal("vote on deleted comment should be rejected")
+	}
+	up, down, _ := voteSvc.GetVotes(context.Background(), "comment", c.ID)
+	if up != 0 || down != 0 {
+		t.Fatalf("deleted comment vote count = %d/%d, want 0/0", up, down)
+	}
+}
+
 func TestSlugify(t *testing.T) {
 	cases := []struct {
 		in, out string
