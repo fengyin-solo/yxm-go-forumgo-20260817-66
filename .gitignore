@@ -1,0 +1,6 @@
+forumgo
+*.exe
+.DS_Store
+/out/
+/dist/
+*.log
