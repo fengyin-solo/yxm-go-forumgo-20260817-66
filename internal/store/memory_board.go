@@ -104,9 +104,20 @@ func (s *MemoryBoardStore) Update(ctx context.Context, b *model.Board) error {
 	if !ok {
 		return model.ErrNotFound
 	}
-	if orig.Slug != b.Slug && b.Slug != "" {
+	// If the slug changed, reconcile the slug index. Reject conflicts with
+	// other boards: a slug that only differs by spaces/case before
+	// normalization (already applied upstream) must not silently overwrite the
+	// existing board's index entry.
+	if b.Slug != orig.Slug {
+		if b.Slug != "" {
+			if ownerID, used := s.slugIdx[b.Slug]; used && ownerID != b.ID {
+				return fmt.Errorf("%w: slug already used", model.ErrConflict)
+			}
+		}
 		delete(s.slugIdx, orig.Slug)
-		s.slugIdx[b.Slug] = b.ID
+		if b.Slug != "" {
+			s.slugIdx[b.Slug] = b.ID
+		}
 	}
 	s.items[b.ID] = b.Clone()
 	s.dirty = true
