@@ -1,4 +1,4 @@
-# yxm-go-forumgo-20260817-66
+# forumgo__001
 
 ## 标准命令
 

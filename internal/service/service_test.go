@@ -68,6 +68,30 @@ func TestBoardAutoSlug(t *testing.T) {
 	}
 }
 
+func TestBoardUpdateRejectsDuplicateCanonicalSlug(t *testing.T) {
+	svc := boardTest(t)
+	first, err := svc.Create(context.Background(), &model.Board{Name: "General", Slug: "general"})
+	if err != nil {
+		t.Fatalf("Create first board: %v", err)
+	}
+	second, err := svc.Create(context.Background(), &model.Board{Name: "Announcements", Slug: "announcements"})
+	if err != nil {
+		t.Fatalf("Create second board: %v", err)
+	}
+
+	dup := " GENERAL "
+	if _, err := svc.Update(context.Background(), second.ID, &UpdateBoardRequest{Slug: &dup}); err == nil {
+		t.Fatal("updating a board to an existing canonical slug should fail")
+	}
+	got, err := svc.GetBySlug(context.Background(), "general")
+	if err != nil {
+		t.Fatalf("GetBySlug after failed update: %v", err)
+	}
+	if got.ID != first.ID {
+		t.Fatalf("slug index points to %q, want %q", got.ID, first.ID)
+	}
+}
+
 func TestThreadCreate(t *testing.T) {
 	boardSvc, threadSvc := threadTest(t)
 	boardSvc.Create(context.Background(), &model.Board{ID: "b1", Name: "Board", Slug: "board"})
