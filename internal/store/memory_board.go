@@ -83,7 +83,7 @@ func (s *MemoryBoardStore) GetByID(ctx context.Context, id string) (*model.Board
 func (s *MemoryBoardStore) GetBySlug(ctx context.Context, slug string) (*model.Board, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	id, ok := s.slugIdx[slug]
+	id, ok := s.slugIdx[model.CanonicalSlug(slug)]
 	if !ok {
 		return nil, model.ErrNotFound
 	}
@@ -104,7 +104,11 @@ func (s *MemoryBoardStore) Update(ctx context.Context, b *model.Board) error {
 	if !ok {
 		return model.ErrNotFound
 	}
+	b.Slug = model.CanonicalSlug(b.Slug)
 	if orig.Slug != b.Slug && b.Slug != "" {
+		if owner, used := s.slugIdx[b.Slug]; used && owner != b.ID {
+			return fmt.Errorf("%w: slug already used", model.ErrConflict)
+		}
 		delete(s.slugIdx, orig.Slug)
 		s.slugIdx[b.Slug] = b.ID
 	}

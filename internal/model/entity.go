@@ -28,10 +28,15 @@ func (b *Board) Clone() *Board {
 	return &cp
 }
 
+// CanonicalSlug returns the storage key used for board slugs.
+func CanonicalSlug(slug string) string {
+	return strings.ToLower(strings.TrimSpace(slug))
+}
+
 // Normalize trims whitespace and lowercases the slug.
 func (b *Board) Normalize() {
 	b.Name = strings.TrimSpace(b.Name)
-	b.Slug = strings.ToLower(strings.TrimSpace(b.Slug))
+	b.Slug = CanonicalSlug(b.Slug)
 	b.Description = strings.TrimSpace(b.Description)
 }
 

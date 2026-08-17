@@ -15,6 +15,7 @@ func (r CreateBoardRequest) Validate() (ve model.ValidationErrors) {
 	if r.Name = trimSpace(r.Name); r.Name == "" {
 		ve = append(ve, model.ValidationError{Field: "name", Message: "required"})
 	}
+	r.Slug = model.CanonicalSlug(r.Slug)
 	return ve
 }
 

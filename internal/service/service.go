@@ -49,7 +49,7 @@ func (s *BoardService) GetByID(ctx context.Context, id string) (*model.Board, er
 
 // GetBySlug returns a board by slug.
 func (s *BoardService) GetBySlug(ctx context.Context, slug string) (*model.Board, error) {
-	return s.store.GetBySlug(ctx, slug)
+	return s.store.GetBySlug(ctx, model.CanonicalSlug(slug))
 }
 
 // Update updates an existing board.
@@ -62,6 +62,9 @@ func (s *BoardService) Update(ctx context.Context, id string, req *UpdateBoardRe
 	b.Normalize()
 	if b.Name == "" {
 		return nil, fmt.Errorf("%w: name is required", model.ErrInvalidInput)
+	}
+	if b.Slug == "" {
+		b.Slug = slugify(b.Name)
 	}
 	b.UpdatedAt = s.now().UTC()
 	if err := s.store.Update(ctx, b); err != nil {
