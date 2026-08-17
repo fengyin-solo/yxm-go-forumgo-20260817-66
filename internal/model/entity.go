@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+const (
+	TargetThread    = "thread"
+	TargetComment   = "comment"
+	ReportOpen      = "open"
+	ReportResolved  = "resolved"
+	ReportDismissed = "dismissed"
+)
+
+// CanonicalReportStatus returns the normalized moderation status.
+func CanonicalReportStatus(status string) string {
+	return strings.ToLower(strings.TrimSpace(status))
+}
+
 // Board represents a forum category/board.
 type Board struct {
 	ID           string    `json:"id"`

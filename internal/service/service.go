@@ -362,6 +362,9 @@ func NewReportService(store store.ReportStore) *ReportService {
 
 // Create creates a new report.
 func (s *ReportService) Create(ctx context.Context, r *model.Report) (*model.Report, error) {
+	r.Reason = strings.TrimSpace(r.Reason)
+	r.TargetType = strings.TrimSpace(r.TargetType)
+	r.TargetID = strings.TrimSpace(r.TargetID)
 	if r.Reason == "" {
 		return nil, fmt.Errorf("%w: reason is required", model.ErrInvalidInput)
 	}
@@ -369,7 +372,7 @@ func (s *ReportService) Create(ctx context.Context, r *model.Report) (*model.Rep
 		return nil, fmt.Errorf("%w: target_id and target_type required", model.ErrInvalidInput)
 	}
 	r.ID = newID()
-	r.Status = "open"
+	r.Status = model.ReportOpen
 	r.CreatedAt = s.now().UTC()
 	if err := s.store.Create(ctx, r); err != nil {
 		return nil, err
@@ -383,7 +386,8 @@ func (s *ReportService) Resolve(ctx context.Context, id string, status string) (
 	if err != nil {
 		return nil, err
 	}
-	if status != "resolved" && status != "dismissed" {
+	status = model.CanonicalReportStatus(status)
+	if status != model.ReportResolved && status != model.ReportDismissed {
 		return nil, fmt.Errorf("%w: status must be resolved or dismissed", model.ErrInvalidInput)
 	}
 	r.Status = status
@@ -397,7 +401,7 @@ func (s *ReportService) Resolve(ctx context.Context, id string, status string) (
 
 // List returns reports matching the filter.
 func (s *ReportService) List(ctx context.Context, status string) ([]*model.Report, error) {
-	return s.store.List(ctx, status)
+	return s.store.List(ctx, model.CanonicalReportStatus(status))
 }
 
 func newID() string {

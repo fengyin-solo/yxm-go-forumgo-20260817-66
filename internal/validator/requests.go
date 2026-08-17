@@ -1,6 +1,10 @@
 package validator
 
-import "github.com/example/forumgo/internal/model"
+import (
+	"strings"
+
+	"github.com/example/forumgo/internal/model"
+)
 
 // CreateBoardRequest is the payload for creating a board.
 type CreateBoardRequest struct {
@@ -66,7 +70,7 @@ type CreateVoteRequest struct {
 
 // Validate checks the request and returns any errors.
 func (r CreateVoteRequest) Validate() (ve model.ValidationErrors) {
-	if r.TargetType = trimSpace(r.TargetType); r.TargetType != "thread" && r.TargetType != "comment" {
+	if r.TargetType = strings.ToLower(trimSpace(r.TargetType)); r.TargetType != model.TargetThread && r.TargetType != model.TargetComment {
 		ve = append(ve, model.ValidationError{Field: "target_type", Message: "must be thread or comment"})
 	}
 	if r.TargetID = trimSpace(r.TargetID); r.TargetID == "" {

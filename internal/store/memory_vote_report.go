@@ -251,6 +251,7 @@ func (s *MemoryReportStore) Update(ctx context.Context, r *model.Report) error {
 }
 
 func (s *MemoryReportStore) List(ctx context.Context, status string) ([]*model.Report, error) {
+	status = model.CanonicalReportStatus(status)
 	s.mu.RLock()
 	var out []*model.Report
 	for _, r := range s.items {

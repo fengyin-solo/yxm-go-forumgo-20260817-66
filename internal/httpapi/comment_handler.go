@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/example/forumgo/internal/model"
 	"github.com/example/forumgo/internal/service"
@@ -151,10 +152,10 @@ func (h *CommentHandler) Report(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rep := &model.Report{
-		ReporterID: req.ReporterID,
-		TargetType: req.TargetType,
-		TargetID:   req.TargetID,
-		Reason:     req.Reason,
+		ReporterID: strings.TrimSpace(req.ReporterID),
+		TargetType: strings.TrimSpace(req.TargetType),
+		TargetID:   strings.TrimSpace(req.TargetID),
+		Reason:     strings.TrimSpace(req.Reason),
 	}
 	created, err := h.reportSvc.Create(r.Context(), rep)
 	if err != nil {
