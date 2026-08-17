@@ -335,8 +335,14 @@ func (s *VoteService) Vote(ctx context.Context, v *model.Vote) error {
 			return err
 		}
 	case "comment":
-		if _, err := s.commentStore.GetByID(ctx, v.TargetID); err != nil {
+		c, err := s.commentStore.GetByID(ctx, v.TargetID)
+		if err != nil {
 			return err
+		}
+		// Reject votes on soft-deleted comments so deleted content gathers no
+		// further interaction data.
+		if c.IsDeleted {
+			return fmt.Errorf("%w: comment is deleted", model.ErrConflict)
 		}
 	}
 	v.ID = newID()
