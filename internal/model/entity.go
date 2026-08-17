@@ -76,6 +76,14 @@ func (t *Thread) IncrementReply(at time.Time) {
 	t.LastReplyAt = &at
 }
 
+// DecrementReply decreases the reply count without allowing negative values.
+func (t *Thread) DecrementReply(at time.Time) {
+	if t.ReplyCount > 0 {
+		t.ReplyCount--
+	}
+	t.UpdatedAt = at
+}
+
 // Comment represents a reply in a thread.
 type Comment struct {
 	ID        string     `json:"id"`
@@ -106,6 +114,11 @@ func (c *Comment) Clone() *Comment {
 // Normalize trims whitespace from body.
 func (c *Comment) Normalize() {
 	c.Body = strings.TrimSpace(c.Body)
+}
+
+// Visible reports whether the comment should appear in normal reads.
+func (c *Comment) Visible() bool {
+	return c != nil && !c.IsDeleted
 }
 
 // Score returns the net vote score.

@@ -115,6 +115,9 @@ func (s *MemoryCommentStore) List(ctx context.Context, f model.CommentFilter) ([
 	var out []*model.Comment
 	for _, id := range ids {
 		c := s.items[id]
+		if !c.Visible() {
+			continue
+		}
 		if f.ParentID != nil {
 			hasParent := c.ParentID != nil
 			if *f.ParentID && !hasParent {
@@ -145,7 +148,13 @@ func (s *MemoryCommentStore) CountByThread(ctx context.Context, threadID string)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	ids := s.threadIdx[threadID]
-	return len(ids), nil
+	count := 0
+	for _, id := range ids {
+		if s.items[id].Visible() {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (s *MemoryCommentStore) Close() error {

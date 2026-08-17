@@ -54,6 +54,10 @@ func (h *CommentHandler) Get(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	if c.IsDeleted {
+		writeError(w, model.ErrNotFound)
+		return
+	}
 	writeJSON(w, http.StatusOK, c)
 }
 

@@ -259,7 +259,14 @@ func (s *CommentService) Create(ctx context.Context, c *model.Comment) (*model.C
 
 // GetByID returns a comment by ID.
 func (s *CommentService) GetByID(ctx context.Context, id string) (*model.Comment, error) {
-	return s.store.GetByID(ctx, id)
+	c, err := s.store.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !c.Visible() {
+		return nil, model.ErrNotFound
+	}
+	return c, nil
 }
 
 // Update updates an existing comment.
@@ -285,7 +292,23 @@ func (s *CommentService) Update(ctx context.Context, id string, req *UpdateComme
 
 // Delete soft-deletes a comment.
 func (s *CommentService) Delete(ctx context.Context, id string) error {
-	return s.store.SoftDelete(ctx, id)
+	c, err := s.store.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !c.Visible() {
+		return nil
+	}
+	if err := s.store.SoftDelete(ctx, id); err != nil {
+		return err
+	}
+	t, err := s.threadStore.GetByID(ctx, c.ThreadID)
+	if err != nil {
+		return err
+	}
+	now := s.now().UTC()
+	t.DecrementReply(now)
+	return s.threadStore.Update(ctx, t)
 }
 
 // List returns comments matching the filter.
