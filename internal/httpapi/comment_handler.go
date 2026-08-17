@@ -111,10 +111,10 @@ func (h *CommentHandler) Vote(w http.ResponseWriter, r *http.Request) {
 	pathParts := splitPath(r.URL.Path)
 	var targetType, targetID string
 	if len(pathParts) >= 4 && pathParts[2] == "threads" {
-		targetType = "thread"
+		targetType = model.TargetThread
 		targetID = pathParts[3]
 	} else if len(pathParts) >= 4 && pathParts[2] == "comments" {
-		targetType = "comment"
+		targetType = model.TargetComment
 		targetID = pathParts[3]
 	}
 	var req struct {

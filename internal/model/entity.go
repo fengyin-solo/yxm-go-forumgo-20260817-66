@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	TargetThread  = "thread"
+	TargetComment = "comment"
+)
+
 // Board represents a forum category/board.
 type Board struct {
 	ID           string    `json:"id"`
@@ -106,6 +111,11 @@ func (c *Comment) Clone() *Comment {
 // Normalize trims whitespace from body.
 func (c *Comment) Normalize() {
 	c.Body = strings.TrimSpace(c.Body)
+}
+
+// Visible reports whether the comment can be used as an active target.
+func (c *Comment) Visible() bool {
+	return c != nil && !c.IsDeleted
 }
 
 // Score returns the net vote score.

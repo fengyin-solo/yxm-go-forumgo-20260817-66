@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -49,6 +50,9 @@ func NewMemoryVoteStore(path string, log *logger.Logger, interval time.Duration)
 }
 
 func voteKey(targetType, targetID, userID string) string {
+	targetType = strings.TrimSpace(targetType)
+	targetID = strings.TrimSpace(targetID)
+	userID = strings.TrimSpace(userID)
 	return targetType + ":" + targetID + ":" + userID
 }
 

@@ -322,7 +322,7 @@ func (s *VoteService) Vote(ctx context.Context, v *model.Vote) error {
 	if v.Value != 1 && v.Value != -1 {
 		return fmt.Errorf("%w: vote value must be +1 or -1", model.ErrInvalidInput)
 	}
-	if v.TargetType != "thread" && v.TargetType != "comment" {
+	if v.TargetType != model.TargetThread && v.TargetType != model.TargetComment {
 		return fmt.Errorf("%w: target_type must be thread or comment", model.ErrInvalidInput)
 	}
 	if v.TargetID == "" || v.UserID == "" {
@@ -330,13 +330,17 @@ func (s *VoteService) Vote(ctx context.Context, v *model.Vote) error {
 	}
 	// Check target exists
 	switch v.TargetType {
-	case "thread":
+	case model.TargetThread:
 		if _, err := s.threadStore.GetByID(ctx, v.TargetID); err != nil {
 			return err
 		}
-	case "comment":
-		if _, err := s.commentStore.GetByID(ctx, v.TargetID); err != nil {
+	case model.TargetComment:
+		c, err := s.commentStore.GetByID(ctx, v.TargetID)
+		if err != nil {
 			return err
+		}
+		if !c.Visible() {
+			return model.ErrNotFound
 		}
 	}
 	v.ID = newID()
