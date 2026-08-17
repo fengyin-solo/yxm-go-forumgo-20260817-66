@@ -156,6 +156,36 @@ func TestVoteService(t *testing.T) {
 	}
 }
 
+func TestReportStatusIsCanonicalAcrossResolveAndList(t *testing.T) {
+	reportStore, _ := store.NewMemoryReportStore("", nil, 30*time.Second)
+	t.Cleanup(func() { reportStore.Close() })
+	reportSvc := NewReportService(reportStore)
+
+	report, err := reportSvc.Create(context.Background(), &model.Report{
+		ReporterID: "u1",
+		TargetType: "thread",
+		TargetID:   "t1",
+		Reason:     "spam",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	resolved, err := reportSvc.Resolve(context.Background(), report.ID, " Resolved ")
+	if err != nil {
+		t.Fatalf("Resolve should accept canonical status with whitespace: %v", err)
+	}
+	if resolved.Status != "resolved" {
+		t.Fatalf("Status = %q, want resolved", resolved.Status)
+	}
+	list, err := reportSvc.List(context.Background(), " RESOLVED ")
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 || list[0].ID != report.ID {
+		t.Fatalf("resolved list = %#v, want report %s", list, report.ID)
+	}
+}
+
 func TestSlugify(t *testing.T) {
 	cases := []struct {
 		in, out string
