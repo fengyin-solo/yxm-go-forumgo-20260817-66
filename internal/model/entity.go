@@ -76,6 +76,14 @@ func (t *Thread) IncrementReply(at time.Time) {
 	t.LastReplyAt = &at
 }
 
+// DecrementReply decrements reply count, clamped at zero. Used when a comment
+// is soft-deleted so the thread's reply count stays in sync with visible replies.
+func (t *Thread) DecrementReply() {
+	if t.ReplyCount > 0 {
+		t.ReplyCount--
+	}
+}
+
 // Comment represents a reply in a thread.
 type Comment struct {
 	ID        string     `json:"id"`

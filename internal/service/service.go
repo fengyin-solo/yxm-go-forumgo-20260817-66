@@ -257,9 +257,17 @@ func (s *CommentService) Create(ctx context.Context, c *model.Comment) (*model.C
 	return c.Clone(), nil
 }
 
-// GetByID returns a comment by ID.
+// GetByID returns a comment by ID. Soft-deleted comments are hidden from
+// callers and surface as ErrNotFound so the detail endpoint returns 404.
 func (s *CommentService) GetByID(ctx context.Context, id string) (*model.Comment, error) {
-	return s.store.GetByID(ctx, id)
+	c, err := s.store.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if c.IsDeleted {
+		return nil, model.ErrNotFound
+	}
+	return c, nil
 }
 
 // Update updates an existing comment.
@@ -283,14 +291,43 @@ func (s *CommentService) Update(ctx context.Context, id string, req *UpdateComme
 	return c.Clone(), nil
 }
 
-// Delete soft-deletes a comment.
+// Delete soft-deletes a comment and keeps the parent thread's reply count in
+// sync with the remaining visible replies. It is idempotent: deleting a comment
+// that is already soft-deleted does not decrement the reply count again.
 func (s *CommentService) Delete(ctx context.Context, id string) error {
-	return s.store.SoftDelete(ctx, id)
+	c, err := s.store.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if c.IsDeleted {
+		return nil
+	}
+	if err := s.store.SoftDelete(ctx, id); err != nil {
+		return err
+	}
+	// Decrement the parent thread's reply count (best-effort if the thread is gone).
+	if t, err := s.threadStore.GetByID(ctx, c.ThreadID); err == nil {
+		t.DecrementReply()
+		t.UpdatedAt = s.now().UTC()
+		s.threadStore.Update(ctx, t)
+	}
+	return nil
 }
 
-// List returns comments matching the filter.
+// List returns comments matching the filter, excluding soft-deleted comments
+// so they no longer appear in the comment list.
 func (s *CommentService) List(ctx context.Context, f model.CommentFilter) ([]*model.Comment, error) {
-	return s.store.List(ctx, f)
+	comments, err := s.store.List(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*model.Comment, 0, len(comments))
+	for _, c := range comments {
+		if !c.IsDeleted {
+			out = append(out, c)
+		}
+	}
+	return out, nil
 }
 
 // UpdateCommentRequest describes fields that can be updated on a comment.
