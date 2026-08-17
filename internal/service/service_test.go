@@ -134,6 +134,32 @@ func TestCommentUpdate(t *testing.T) {
 	}
 }
 
+func TestCommentDeleteHidesCommentAndUpdatesThreadCount(t *testing.T) {
+	boardSvc, threadSvc, commentSvc := commentTest(t)
+	boardSvc.Create(context.Background(), &model.Board{ID: "b1", Name: "Board", Slug: "board"})
+	th, _ := threadSvc.Create(context.Background(), &model.Thread{BoardID: "b1", AuthorID: "u1", Title: "Cleanup", Body: "World"})
+	first, _ := commentSvc.Create(context.Background(), &model.Comment{ThreadID: th.ID, AuthorID: "u1", Body: "first"})
+	commentSvc.Create(context.Background(), &model.Comment{ThreadID: th.ID, AuthorID: "u2", Body: "second"})
+
+	if err := commentSvc.Delete(context.Background(), first.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := commentSvc.GetByID(context.Background(), first.ID); err == nil {
+		t.Fatal("deleted comment should not be returned by GetByID")
+	}
+	list, err := commentSvc.List(context.Background(), model.CommentFilter{ThreadID: th.ID})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 || list[0].Body != "second" {
+		t.Fatalf("visible comments = %#v, want only second", list)
+	}
+	gotThread, _ := threadSvc.GetByID(context.Background(), th.ID)
+	if gotThread.ReplyCount != 1 {
+		t.Fatalf("ReplyCount = %d, want 1", gotThread.ReplyCount)
+	}
+}
+
 func TestVoteService(t *testing.T) {
 	voteStore, _ := store.NewMemoryVoteStore("", nil, 30*time.Second)
 	defer voteStore.Close()
