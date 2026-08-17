@@ -40,6 +40,13 @@ func (h *ThreadHandler) List(w http.ResponseWriter, r *http.Request) {
 		b := false
 		f.IsPinned = &b
 	}
+	if v := q.Get("locked"); v == "true" {
+		b := true
+		f.IsLocked = &b
+	} else if v == "false" {
+		b := false
+		f.IsLocked = &b
+	}
 	list, err := h.svc.List(r.Context(), f)
 	if err != nil {
 		writeError(w, err)
@@ -117,6 +124,20 @@ func (h *ThreadHandler) ListByBoard(w http.ResponseWriter, r *http.Request) {
 	f := model.ThreadFilter{BoardID: boardID}
 	if v := q.Get("q"); v != "" {
 		f.Query = v
+	}
+	if v := q.Get("pinned"); v == "true" {
+		b := true
+		f.IsPinned = &b
+	} else if v == "false" {
+		b := false
+		f.IsPinned = &b
+	}
+	if v := q.Get("locked"); v == "true" {
+		b := true
+		f.IsLocked = &b
+	} else if v == "false" {
+		b := false
+		f.IsLocked = &b
 	}
 	list, err := h.svc.List(r.Context(), f)
 	if err != nil {

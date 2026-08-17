@@ -185,6 +185,7 @@ func (s *ThreadService) Delete(ctx context.Context, id string) error {
 
 // List returns threads matching the filter.
 func (s *ThreadService) List(ctx context.Context, f model.ThreadFilter) ([]*model.Thread, error) {
+	f.Normalize()
 	return s.store.List(ctx, f)
 }
 

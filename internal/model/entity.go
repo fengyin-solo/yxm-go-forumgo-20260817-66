@@ -182,6 +182,13 @@ type ThreadFilter struct {
 	IsLocked   *bool
 }
 
+// Normalize trims string fields before the filter crosses package boundaries.
+func (f *ThreadFilter) Normalize() {
+	f.BoardID = strings.TrimSpace(f.BoardID)
+	f.AuthorID = strings.TrimSpace(f.AuthorID)
+	f.Query = strings.TrimSpace(f.Query)
+}
+
 // Matches reports whether the thread satisfies the filter.
 func (f *ThreadFilter) Matches(t *Thread) bool {
 	if f.BoardID != "" && t.BoardID != f.BoardID {

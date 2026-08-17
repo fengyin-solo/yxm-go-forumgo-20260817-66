@@ -110,6 +110,7 @@ func (s *MemoryThreadStore) Delete(ctx context.Context, id string) error {
 }
 
 func (s *MemoryThreadStore) List(ctx context.Context, f model.ThreadFilter) ([]*model.Thread, error) {
+	f.Normalize()
 	s.mu.RLock()
 	var ids []string
 	if f.BoardID != "" {
